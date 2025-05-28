@@ -1,74 +1,102 @@
-'use client'                              // 1️⃣ Indica que este componente roda no cliente (navegador), necessário no App Router
+'use client'                                 // 1️⃣ Mantenha para habilitar hooks do React no App Router
 
-import { useState } from 'react'         // 2️⃣ Importa o “gancho” useState do React para gerenciar estado local
+import { useState } from 'react'            // 2️⃣ useState para gerenciar estados locais
 
-// 3️⃣ Componente padrão exportado, que representa a página inicial “/”
 export default function Home() {
-  // 4️⃣ Cria uma variável de estado 'description' e sua função para atualizar 'setDescription'
-  const [description, setDescription] = useState('')  
-  // 5️⃣ Cria uma variável de estado 'email' e sua função para atualizar 'setEmail'
-  const [email, setEmail] = useState('')
+  // 3️⃣ Estados para campos e resultados
+  const [description, setDescription] = useState('')
+  const [email, setEmail]             = useState('')
+  const [keywords, setKeywords]       = useState([])    // guarda a lista de keywords
+  const [loading, setLoading]         = useState(false) // sinaliza requisição em andamento
+  const [error, setError]             = useState('')    // mensagem de erro, se ocorrer
 
-  // 6️⃣ Função que lida com o envio do formulário
-  function handleSubmit(e) {
-    e.preventDefault()                    // 7️⃣ Impede o comportamento padrão de recarregar a página
-    // 8️⃣ Exibe um alerta apenas para confirmar que recebemos os valores corretamente
-    alert(`Descrição: ${description}\nE-mail: ${email}`)
+  // 4️⃣ Essa função agora é async para usar await nas fetches
+  async function handleSubmit(e) {
+    e.preventDefault()                  // 5️⃣ previne reload da página
+    setError('')                        // 6️⃣ limpa erros anteriores
+    setKeywords([])                     // 7️⃣ limpa keywords anteriores
+    setLoading(true)                    // 8️⃣ mostra estado de “gerando”
+
+    try {
+      // 9️⃣ Chama o endpoint de geração de keywords
+      const resKeywords = await fetch('/api/keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description })
+      })
+      const dataKeywords = await resKeywords.json()
+      if (!resKeywords.ok) {
+        throw new Error(dataKeywords.error || 'Erro ao gerar keywords')
+      }
+      setKeywords(dataKeywords.keywords) // 🔟 atualiza estado com a lista
+
+      // 1️⃣1️⃣ Em seguida, salva o lead sem bloquear a UI
+      await fetch('/api/save-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, description })
+      })
+    } catch (err) {
+      setError(err.message)             // 1️⃣2️⃣ captura e exibe erro
+    } finally {
+      setLoading(false)                 // 1️⃣3️⃣ finaliza “loading”
+    }
   }
 
-  // 9️⃣ JSX retornado: define a interface que será renderizada no navegador
+  // 1️⃣4️⃣ JSX que renderiza o formulário e resultados
   return (
-    // 🔟 Container principal centralizado e com padding (usando classes do Tailwind)
     <main className="max-w-xl mx-auto p-6">
-      {/* 1️⃣1️⃣ Título principal */}
       <h1 className="text-2xl font-bold mb-4">AI Traffic Scout</h1>
-      {/* 1️⃣2️⃣ Subtítulo */}
       <h2 className="text-xl mb-6">Keyword Booster</h2>
 
-      {/* 1️⃣3️⃣ Formulário: chama handleSubmit ao enviar */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 1️⃣4️⃣ Campo Descrição */}
         <div>
-          <label htmlFor="description" className="block mb-1">
-            Descrição
-          </label>
-          {/* textarea controlado pelo React (value + onChange) */}
+          <label htmlFor="description" className="block mb-1">Descrição</label>
           <textarea
             id="description"
-            value={description}                       // 1️⃣5️⃣ Liga o conteúdo do textarea ao estado 'description'
-            onChange={e => setDescription(e.target.value)} // 1️⃣6️⃣ Atualiza o estado sempre que o usuário digita
+            value={description}
+            onChange={e => setDescription(e.target.value)} // mantém o estado sincronizado
             rows={4}
-            className="w-full border px-2 py-1"       // 1️⃣7️⃣ Estilo básico com Tailwind: largura total, borda e padding
+            className="w-full border px-2 py-1"
             placeholder="Descreva seu produto ou nicho…"
-            required                                 // 1️⃣8️⃣ Garante que o campo não possa ficar vazio
+            required
           />
         </div>
 
-        {/* 1️⃣9️⃣ Campo E-mail */}
         <div>
-          <label htmlFor="email" className="block mb-1">
-            E-mail
-          </label>
-          {/* input controlado para capturar o e-mail */}
+          <label htmlFor="email" className="block mb-1">E-mail</label>
           <input
             id="email"
-            type="email"                             // 2️⃣0️⃣ Tipo 'email' ativa validação nativa do navegador
-            value={email}                            // 2️⃣1️⃣ Liga o conteúdo do input ao estado 'email'
-            onChange={e => setEmail(e.target.value)} // 2️⃣2️⃣ Atualiza o estado ao digitar
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}      // mantém o estado sincronizado
             className="w-full border px-2 py-1"
             placeholder="seu@email.com"
             required
           />
         </div>
 
-        {/* 2️⃣3️⃣ Botão de envio */}
         <button
-          type="submit"                              // 2️⃣4️⃣ Define este elemento como o botão que envia o form
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          type="submit"
+          disabled={loading}                           // desabilita enquanto carrega
+          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         >
-          Gerar keywords
+          {loading ? 'Gerando…' : 'Gerar keywords'}
         </button>
       </form>
+
+      {error && <p className="text-red-600 mt-4">{error}</p>}
+
+      {keywords.length > 0 && (                       // renderiza somente se houver keywords
+        <section className="mt-6">
+          <h3 className="text-lg font-semibold mb-2">Keywords geradas:</h3>
+          <ul className="list-disc list-inside space-y-1">
+            {keywords.map((kw, i) => (
+              <li key={i}>{kw}</li>               // exibe cada keyword
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   )
 }
