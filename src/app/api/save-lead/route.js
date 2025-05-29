@@ -1,4 +1,4 @@
-// src/app/api/save-lead/route.js
+// src/app/api/save-lead/route.js - Este arquivo define uma rota API para salvar leads enviados via requisição POST.        
 import { NextResponse } from 'next/server' // Importa o NextResponse para manipulação de respostas HTTP
 import { promises as fs } from 'fs'  // Importa o módulo 'fs' para manipulação de arquivos
 import path from 'path'  // Importa o módulo 'path' para manipulação de caminhos
