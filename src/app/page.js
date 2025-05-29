@@ -1,3 +1,5 @@
+// Esse é o arquivo principal da sua aplicação Next.js
+// src/app/page.js - onde você define a página inicial - App Router:pasta src/app → arquivo page.js
 'use client'                                 // 1️⃣ Mantenha para habilitar hooks do React no App Router
 
 import { useState } from 'react'            // 2️⃣ useState para gerenciar estados locais
