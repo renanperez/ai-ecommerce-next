@@ -1,4 +1,4 @@
-// src/app/api/keywords/route.js
+// src/app/api/keywords/route.js - Este arquivo define uma rota API para gerar palavras-chave usando a OpenAI API.
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
